@@ -6,7 +6,7 @@ import requests
 # -----------------------------
 API_KEY = "AIzaSyDGJeBg8ekOWLKoF_cuIhi1VPJMDl02HWk"
 
-API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
 
 # -----------------------------
 # PAGE CONFIG
