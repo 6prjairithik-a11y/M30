@@ -2,11 +2,16 @@ import streamlit as st
 import requests
 
 # -----------------------------
-# 🔐 HARD CODE YOUR GEMINI API KEY
+# 🔐 HARD CODE YOUR GROQ API KEY
 # -----------------------------
-API_KEY = "AIzaSyAdIA2PJ1mUt8NUnsBvFIPO2uH_KsZwOdI"
+API_KEY = "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"
 
-API_URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+headers = {
+    "Authorization": f"Bearer {API_KEY}",
+    "Content-Type": "application/json"
+}
 
 # -----------------------------
 # PAGE CONFIG
@@ -14,7 +19,7 @@ API_URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash
 st.set_page_config(page_title="Concrete AI Predictor", layout="wide")
 
 st.title("🏗 Concrete Strength Prediction & Analysis AI")
-st.markdown("Interactive Civil Engineering Assistant")
+st.markdown("Powered by Groq (Free LLM API)")
 
 # -----------------------------
 # INPUT SECTION
@@ -40,13 +45,12 @@ if analyze:
         st.error("Please enter valid load and dimension.")
     else:
         # Calculate compressive strength
-        area = (dimension * dimension)  # mm²
+        area = dimension * dimension  # mm²
         compressive_strength = (load * 1000) / area  # N/mm²
 
         st.subheader("📐 Calculated Compressive Strength")
         st.success(f"{compressive_strength:.2f} N/mm²")
 
-        # Prepare prompt for Gemini
         prompt = f"""
 You are a professional structural engineer.
 
@@ -61,27 +65,28 @@ Ambient Temperature: {ambient_temp} °C
 Tasks:
 1. Predict 28-day strength.
 2. Check if it satisfies M30 grade requirement.
-3. Analyze strength development trend.
+3. Analyze strength development.
 4. Evaluate thermal cracking risk.
-5. Provide durability assessment.
-6. Give final professional recommendation.
-
-Be structured and technical.
+5. Give final professional recommendation.
+Provide structured technical report.
 """
 
-        payload = {
-            "contents": [{
-                "parts": [{"text": prompt}]
-            }]
+        data = {
+            "model": "llama3-8b-8192",
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.3,
+            "max_tokens": 800
         }
 
         with st.spinner("Analyzing with AI..."):
             try:
-                response = requests.post(API_URL, json=payload)
+                response = requests.post(GROQ_URL, headers=headers, json=data)
                 result = response.json()
 
-                if "candidates" in result:
-                    output = result["candidates"][0]["content"]["parts"][0]["text"]
+                if "choices" in result:
+                    output = result["choices"][0]["message"]["content"]
                     st.subheader("📊 AI Engineering Report")
                     st.write(output)
                 else:
