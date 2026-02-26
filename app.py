@@ -2,64 +2,80 @@ import streamlit as st
 import requests
 
 # -----------------------------
-# 🔐 HARD CODE YOUR API KEY HERE
+# 🔐 HARD CODE YOUR GEMINI API KEY
 # -----------------------------
 API_KEY = "AIzaSyC0KJNhoK5DN0Imzz0StzcIww_gKZk2wYk"
 
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
 # -----------------------------
-# PAGE SETUP
+# PAGE CONFIG
 # -----------------------------
 st.set_page_config(page_title="Concrete AI Predictor", layout="wide")
 
-st.title("🏗 M30 Concrete AI Prediction System")
-st.markdown("LLM-Based Engineering Analysis")
+st.title("🏗 Concrete Strength Prediction & Analysis AI")
+st.markdown("Interactive Civil Engineering Assistant")
 
 # -----------------------------
-# USER INPUT
+# INPUT SECTION
 # -----------------------------
-st.subheader("📥 Paste Experimental Data")
-user_data = st.text_area("Enter Concrete Data Below", height=350)
+st.subheader("📥 Enter Concrete Test Details")
 
-analyze_button = st.button("🔍 Analyze")
+age = st.number_input("Age of Concrete (Days)", min_value=1)
+load = st.number_input("Applied Load (kN)", min_value=0.0)
+dimension = st.number_input("Cube Dimension (mm)", value=150)
+peak_temp = st.number_input("Peak Concrete Temperature (°C)")
+ambient_temp = st.number_input("Ambient Temperature (°C)")
+strength_3 = st.number_input("3-Day Strength (Optional)", value=0.0)
+strength_7 = st.number_input("7-Day Strength (Optional)", value=0.0)
+
+analyze = st.button("🔍 Predict & Analyze")
 
 # -----------------------------
 # PROCESS
 # -----------------------------
-if analyze_button:
+if analyze:
 
-    if not user_data.strip():
-        st.error("Please paste your experimental data.")
+    if load == 0 or dimension == 0:
+        st.error("Please enter valid load and dimension.")
     else:
-        with st.spinner("Analyzing concrete behavior..."):
+        # Calculate compressive strength
+        area = (dimension * dimension)  # mm²
+        compressive_strength = (load * 1000) / area  # N/mm²
 
-            prompt = f"""
-You are a senior structural engineer.
+        st.subheader("📐 Calculated Compressive Strength")
+        st.success(f"{compressive_strength:.2f} N/mm²")
 
-Analyze the following M30 concrete experimental dataset:
+        # Prepare prompt for Gemini
+        prompt = f"""
+You are a professional structural engineer.
 
-{user_data}
+Concrete Test Data:
+Age: {age} days
+Calculated Strength: {compressive_strength:.2f} N/mm2
+3-Day Strength: {strength_3}
+7-Day Strength: {strength_7}
+Peak Temperature: {peak_temp} °C
+Ambient Temperature: {ambient_temp} °C
 
-Provide a structured professional engineering report including:
+Tasks:
+1. Predict 28-day strength.
+2. Check if it satisfies M30 grade requirement.
+3. Analyze strength development trend.
+4. Evaluate thermal cracking risk.
+5. Provide durability assessment.
+6. Give final professional recommendation.
 
-1. Strength development analysis (3, 7, 28 days)
-2. Whether M30 grade requirement is satisfied
-3. Comparison between mixes (if available)
-4. Peak temperature and hydration analysis
-5. Thermal cracking risk evaluation
-6. Long-term durability assessment
-7. Final engineering recommendation
-
-Be technical and structured.
+Be structured and technical.
 """
 
-            payload = {
-                "contents": [{
-                    "parts": [{"text": prompt}]
-                }]
-            }
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }]
+        }
 
+        with st.spinner("Analyzing with AI..."):
             try:
                 response = requests.post(API_URL, json=payload)
                 result = response.json()
