@@ -4,7 +4,7 @@ import requests
 # -----------------------------
 # 🔐 HARD CODE YOUR GEMINI API KEY
 # -----------------------------
-API_KEY = "AIzaSyC0KJNhoK5DN0Imzz0StzcIww_gKZk2wYk"
+API_KEY = "AIzaSyDGJeBg8ekOWLKoF_cuIhi1VPJMDl02HWk"
 
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
