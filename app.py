@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
 
-API_KEY = st.secrets["GROQ_API_KEY"]
+# 🔐 YOUR GROQ API KEY
+API_KEY = "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"
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
@@ -60,7 +61,9 @@ Give structured technical report.
 
         data = {
             "model": "llama-3.1-8b-instant",
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
             "temperature": 0.3,
             "max_tokens": 800
         }
