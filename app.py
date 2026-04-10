@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 
 # 🔐 Direct API Key (NOT SAFE for public repos)
-API_KEY = "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"
+API_KEY = "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"
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
