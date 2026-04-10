@@ -1,8 +1,9 @@
 import streamlit as st
 import requests
+import pandas as pd
 
-# 🔐 YOUR GROQ API KEY
-API_KEY = "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"
+# 🔐 Secure API Key (store in .streamlit/secrets.toml)
+API_KEY = st.secrets["GROQ_API_KEY"]
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
@@ -11,71 +12,155 @@ headers = {
     "Content-Type": "application/json"
 }
 
+# Page config
 st.set_page_config(page_title="Concrete AI Predictor", layout="wide")
 
 st.title("🏗 Concrete Strength Prediction & Analysis AI")
-st.markdown("Powered by Groq Free API")
+st.markdown("### Mix Design Based Prediction (RHA + BSF)")
 
-st.subheader("📥 Enter Concrete Test Details")
+# =========================
+# 🔹 INPUT METHOD SELECTION
+# =========================
+option = st.radio("Choose Input Method", ["Manual Entry", "Upload CSV"])
 
-age = st.number_input("Age of Concrete (Days)", min_value=1)
-load = st.number_input("Applied Load (kN)", min_value=0.0)
-dimension = st.number_input("Cube Dimension (mm)", value=150)
-peak_temp = st.number_input("Peak Concrete Temperature (°C)")
-ambient_temp = st.number_input("Ambient Temperature (°C)")
-strength_3 = st.number_input("3-Day Strength (Optional)", value=0.0)
-strength_7 = st.number_input("7-Day Strength (Optional)", value=0.0)
+# =========================
+# 🔹 MANUAL INPUT
+# =========================
+if option == "Manual Entry":
 
-analyze = st.button("🔍 Predict & Analyze")
+    st.subheader("📥 Enter Concrete Mix Details")
 
-if analyze:
+    col1, col2 = st.columns(2)
 
-    if load == 0 or dimension == 0:
-        st.error("Please enter valid load and dimension.")
-    else:
-        area = dimension * dimension
-        compressive_strength = (load * 1000) / area
+    with col1:
+        cement = st.number_input("Cement (kg/m³)", min_value=0.0)
+        rha = st.number_input("RHA (%)", min_value=0.0)
+        bsf = st.number_input("BSF (%)", min_value=0.0)
+        water = st.number_input("Water (kg/m³)", min_value=0.0)
 
-        st.subheader("📐 Calculated Compressive Strength")
-        st.success(f"{compressive_strength:.2f} N/mm²")
+    with col2:
+        fine_agg = st.number_input("Fine Aggregate (kg/m³)", min_value=0.0)
+        coarse_agg = st.number_input("Coarse Aggregate (kg/m³)", min_value=0.0)
+        wcr = st.number_input("Water-Cement Ratio", min_value=0.0)
+        age = st.number_input("Age (days)", min_value=1)
 
-        prompt = f"""
+    analyze = st.button("🔍 Predict & Analyze")
+
+    if analyze:
+
+        if cement == 0 or water == 0:
+            st.error("Please enter valid mix values.")
+        else:
+
+            prompt = f"""
 You are a professional structural engineer.
 
-Concrete Test Data:
+Concrete Mix Data:
+Cement: {cement} kg/m³
+RHA: {rha} %
+BSF: {bsf} %
+Water: {water} kg/m³
+Fine Aggregate: {fine_agg} kg/m³
+Coarse Aggregate: {coarse_agg} kg/m³
+Water-Cement Ratio: {wcr}
 Age: {age} days
-Calculated Strength: {compressive_strength:.2f} MPa
-3-Day Strength: {strength_3}
-7-Day Strength: {strength_7}
-Peak Temperature: {peak_temp} °C
-Ambient Temperature: {ambient_temp} °C
 
 Tasks:
-1. Predict 28-day strength.
-2. Check M30 grade compliance.
-3. Analyze strength development.
-4. Evaluate cracking risk.
-5. Provide recommendation.
-Give structured technical report.
+1. Predict compressive strength (MPa).
+2. Predict 28-day strength.
+3. Classify concrete grade (M20, M25, M30, etc.).
+4. Analyze effect of RHA and BSF.
+5. Evaluate durability and cracking risk.
+6. Suggest mix improvements.
+
+Give a structured engineering report.
 """
 
-        data = {
-            "model": "llama-3.1-8b-instant",
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.3,
-            "max_tokens": 800
-        }
+            data = {
+                "model": "llama-3.1-8b-instant",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.3,
+                "max_tokens": 800
+            }
 
-        with st.spinner("Analyzing with AI..."):
-            response = requests.post(GROQ_URL, headers=headers, json=data)
-            result = response.json()
+            with st.spinner("🤖 AI Analyzing..."):
+                response = requests.post(GROQ_URL, headers=headers, json=data)
+                result = response.json()
 
-            if "choices" in result:
-                output = result["choices"][0]["message"]["content"]
-                st.subheader("📊 AI Engineering Report")
-                st.write(output)
-            else:
-                st.error("API Error")
-                st.write(result)
+                if "choices" in result:
+                    output = result["choices"][0]["message"]["content"]
+                    st.subheader("📊 AI Engineering Report")
+                    st.write(output)
+                else:
+                    st.error("API Error")
+                    st.write(result)
+
+# =========================
+# 🔹 CSV UPLOAD MODE
+# =========================
+else:
+
+    st.subheader("📂 Upload CSV File")
+
+    file = st.file_uploader("Upload your dataset", type=["csv"])
+
+    if file:
+        df = pd.read_csv(file)
+
+        st.write("### Preview Data")
+        st.dataframe(df.head())
+
+        required_columns = [
+            "Cement_kg_m3",
+            "RHA_percent",
+            "BSF_percent",
+            "Water_kg_m3",
+            "Fine_Aggregate_kg_m3",
+            "Coarse_Aggregate_kg_m3",
+            "Water_Cement_Ratio",
+            "Age_days"
+        ]
+
+        if all(col in df.columns for col in required_columns):
+
+            if st.button("🔍 Analyze Dataset"):
+
+                sample = df.iloc[0].to_dict()
+
+                prompt = f"""
+You are a professional structural engineer.
+
+Concrete Mix Sample Data:
+{sample}
+
+Tasks:
+1. Predict compressive strength.
+2. Predict 28-day strength.
+3. Identify concrete grade.
+4. Analyze trends in dataset.
+5. Suggest improvements.
+
+Give structured report.
+"""
+
+                data = {
+                    "model": "llama-3.1-8b-instant",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.3,
+                    "max_tokens": 800
+                }
+
+                with st.spinner("🤖 AI Analyzing Dataset..."):
+                    response = requests.post(GROQ_URL, headers=headers, json=data)
+                    result = response.json()
+
+                    if "choices" in result:
+                        output = result["choices"][0]["message"]["content"]
+                        st.subheader("📊 AI Dataset Report")
+                        st.write(output)
+                    else:
+                        st.error("API Error")
+                        st.write(result)
+
+        else:
+            st.error("CSV must contain required columns!")
