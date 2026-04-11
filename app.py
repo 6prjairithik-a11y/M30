@@ -97,7 +97,7 @@ else:
 
     st.subheader("📂 Upload CSV")
 
-    file = st.file_uploader("Upload CSV", type=["csv", "xlsx"])
+    file = st.file_uploader("Upload CSV", type=["csv"])
 
     if file:
         df = pd.read_csv(file)
